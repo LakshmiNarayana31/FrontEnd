@@ -1,28 +1,31 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Checkbox, Form, message, Typography } from "antd";
+import { Button, Checkbox, Form, Input, message, Typography, Alert } from "antd";
+import { UserOutlined } from "@ant-design/icons";
 import AuthFormWrapper from "../../components/AuthFormWrapper";
-import { EmailInput, PasswordInput } from "../../components/FormFields";
+import { PasswordInput } from "../../components/FormFields";
+import { useAuth } from "../../context/AuthContext";
 import type { LoginFormValues } from "./types";
 
 const { Text } = Typography;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [form] = Form.useForm<LoginFormValues>();
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(values: LoginFormValues) {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      console.log("Login values:", values);
+      const success = await login(values.email, values.password);
       
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      message.success("Login successful!");
-      navigate("/users");
+      if (success) {
+        message.success("Login successful!");
+        navigate("/dashboard");
+      } else {
+        message.error("Invalid credentials. Use: demo / demo");
+      }
     } catch (err) {
       message.error(
         err instanceof Error ? err.message : "Login failed. Please try again."
@@ -34,21 +37,39 @@ export default function LoginPage() {
 
   return (
     <AuthFormWrapper
-      title="Welcome Back"
-      subtitle="Sign in to continue to your account"
+      title="WorkForce Hub"
+      subtitle="Employee Management System"
       footer={
         <Text>
           Don't have an account? <Link to="/register">Register here</Link>
         </Text>
       }
     >
+      <Alert
+        message="Demo Credentials"
+        description="Username: demo | Password: demo"
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
+      
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{ remember: true }}
       >
-        <EmailInput />
+        <Form.Item
+          name="email"
+          label="Username"
+          rules={[{ required: true, message: "Please enter your username" }]}
+        >
+          <Input
+            prefix={<UserOutlined style={{ color: "rgba(0,0,0,0.25)" }} />}
+            placeholder="Enter username"
+            size="large"
+          />
+        </Form.Item>
         
         <PasswordInput name="password" />
 
