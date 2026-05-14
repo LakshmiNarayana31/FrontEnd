@@ -28,14 +28,11 @@ export interface UsersResponse {
 export interface UserFilters {
   firstName?:   string;
   lastName?:    string;
-  email?:       string;
-  phoneNumber?: string;
   gender?:      string[];
-  isActive?:    string;
+  status?:      string[];
   department?:  string[];
   role?:        string[];
   country?:     string[];
-  createdAt?:   string;
 }
 
 export interface TableParams {

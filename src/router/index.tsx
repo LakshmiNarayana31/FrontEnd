@@ -4,8 +4,15 @@ import ListUsersPage from "../pages/ListUsers";
 import AddUserPage from "../pages/AddUser";
 import EditUserPage from "../pages/EditUser";
 import DeleteUserPage from "../pages/DeleteUser";
+import LoginPage from "../pages/Login";
+import RegisterPage from "../pages/Register";
 
 const router = createBrowserRouter([
+  // Auth routes (no layout)
+  { path: "/login",    element: <LoginPage />    },
+  { path: "/register", element: <RegisterPage /> },
+
+  // Protected routes (with layout)
   {
     path: "/",
     element: <Layout />,

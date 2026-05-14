@@ -1,50 +1,143 @@
-import type { User, UserFilters } from "./types";
+import type { User, UserFilters, UsersResponse } from "./types";
 import type { TablePaginationConfig } from "antd/es/table";
 
 const API_BASE = "http://localhost:5095";
 
 export type UserPayload = Omit<User, "id" | "userId" | "createdAt">;
 
-export function buildQueryString(
-  pagination: TablePaginationConfig,
-  filters: UserFilters,
-): string {
-  const params = new URLSearchParams();
-
-  params.set("pageNumber", String(pagination.current  ?? 1));
-  params.set("pageSize",   String(pagination.pageSize ?? 10));
-
-  if (filters.firstName)   params.set("firstName",   filters.firstName);
-  if (filters.lastName)    params.set("lastName",    filters.lastName);
-  if (filters.email)       params.set("email",       filters.email);
-  if (filters.phoneNumber) params.set("phoneNumber", filters.phoneNumber);
-  if (filters.isActive)    params.set("isActive",    filters.isActive);
-  if (filters.createdAt)   params.set("createdAt",   filters.createdAt);
-
-  filters.gender?.forEach((v)     => params.append("gender",     v));
-  filters.department?.forEach((v) => params.append("department", v));
-  filters.role?.forEach((v)       => params.append("role",       v));
-  filters.country?.forEach((v)    => params.append("country",    v));
-
-  return params.toString();
+interface SelectedUserInformationRequest {
+  firstName: string;
+  lastName: string;
+  gender: string[];
+  department: string[];
+  role: string[];
+  country: string[];
+  status: string[];
+  isActive: boolean;
 }
 
-export async function fetchUsers(
-  pagination: TablePaginationConfig,
-  filters: UserFilters,
-): Promise<User[]> {
-  const res = await fetch(
-    `${API_BASE}/api/userInformation?${buildQueryString(pagination, filters)}`,
-  );
-  if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
-  return res.json() as Promise<User[]>;
+// ============================================
+// LIST USERS - Simple pagination list
+// ============================================
+
+function buildListQueryParams(pagination: TablePaginationConfig): string {
+  const searchParams = new URLSearchParams();
+  searchParams.append("pageNumber", String(pagination.current ?? 1));
+  searchParams.append("pageSize", String(pagination.pageSize ?? 10));
+  return searchParams.toString();
 }
 
-export async function fetchUserById(id: string, signal?: AbortSignal): Promise<User> {
-  const res = await fetch(
-    `${API_BASE}/api/userInformation/${id}`,
-    { signal },
-  );
+function parseListResponse(payload: unknown): UsersResponse {
+  if (!payload || typeof payload !== "object") {
+    return { data: [], total: 0 };
+  }
+
+  const response = payload as Record<string, unknown>;
+
+  if (
+    Array.isArray(response.users) &&
+    typeof response.totalCount === "number"
+  ) {
+    return {
+      data: response.users as User[],
+      total: response.totalCount,
+    };
+  }
+
+  return { data: [], total: 0 };
+}
+
+export async function fetchUserList(
+  pagination: TablePaginationConfig,
+): Promise<UsersResponse> {
+  const queryString = buildListQueryParams(pagination);
+  const url = `${API_BASE}/api/users?${queryString}`;
+
+  const response = await fetch(url, { method: "GET" });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user list: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as unknown;
+  return parseListResponse(payload);
+}
+
+// ============================================
+// FILTER USERS - Advanced filtering with POST
+// ============================================
+
+function buildFilterPayload(
+  filters: UserFilters,
+): SelectedUserInformationRequest {
+  return {
+    firstName: filters.firstName?.trim() ?? "",
+    lastName: filters.lastName?.trim() ?? "",
+    gender: Array.isArray(filters.gender) ? filters.gender : [],
+    department: Array.isArray(filters.department) ? filters.department : [],
+    role: Array.isArray(filters.role) ? filters.role : [],
+    country: Array.isArray(filters.country) ? filters.country : [],
+    status: Array.isArray(filters.status) ? filters.status : [],
+    isActive:
+      Array.isArray(filters.status) && filters.status.includes("Active"),
+  };
+}
+
+function buildFilterQueryParams(pagination: TablePaginationConfig): string {
+  const searchParams = new URLSearchParams();
+  searchParams.append("pageNumber", String(pagination.current ?? 1));
+  searchParams.append("pageSize", String(pagination.pageSize ?? 10));
+  return searchParams.toString();
+}
+
+function parseFilterResponse(payload: unknown): UsersResponse {
+  if (!payload || typeof payload !== "object") {
+    return { data: [], total: 0 };
+  }
+
+  const response = payload as Record<string, unknown>;
+
+  if (
+    Array.isArray(response.users) &&
+    typeof response.totalCount === "number"
+  ) {
+    return {
+      data: response.users as User[],
+      total: response.totalCount,
+    };
+  }
+
+  return { data: [], total: 0 };
+}
+
+export async function fetchUsersWithFilters(
+  filters: UserFilters,
+  pagination: TablePaginationConfig,
+): Promise<UsersResponse> {
+  // const queryString = buildFilterQueryParams(pagination);
+  const url = `${API_BASE}/api/users/filters`;
+
+  const payload = buildFilterPayload(filters);
+
+  const response = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch filtered users: ${response.status}`);
+  }
+
+  const responseData = (await response.json()) as unknown;
+  return parseFilterResponse(responseData);
+}
+
+export async function fetchUserById(
+  id: string,
+  signal?: AbortSignal,
+): Promise<User> {
+  const res = await fetch(`${API_BASE}/api/userInformation/${id}`, { signal });
   if (!res.ok) throw new Error(`Failed to fetch user: ${res.status}`);
   return res.json() as Promise<User>;
 }
@@ -59,8 +152,11 @@ export async function createUser(payload: UserPayload): Promise<User> {
   return res.json() as Promise<User>;
 }
 
-export async function updateUser(id: string, payload: UserPayload): Promise<User> {
-  const res = await fetch(`${API_BASE}/api/userInformation/${id})}`, {
+export async function updateUser(
+  id: string,
+  payload: UserPayload,
+): Promise<User> {
+  const res = await fetch(`${API_BASE}/api/userInformation/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -75,4 +171,3 @@ export async function deleteUser(id: string): Promise<void> {
   });
   if (!res.ok) throw new Error(`Failed to delete user: ${res.status}`);
 }
-

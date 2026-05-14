@@ -4,7 +4,6 @@ import { FilterOutlined, CloseOutlined } from "@ant-design/icons";
 import type { UserFilters } from "./types";
 import {
   COUNTRY_OPTIONS,
-  CREATED_AT_OPTIONS,
   DEPARTMENT_OPTIONS,
   GENDER_OPTIONS,
   ROLE_OPTIONS,
@@ -72,18 +71,6 @@ export default function FilterPanel({ onApply, onReset }: Props) {
                 </Form.Item>
               </Col>
 
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Form.Item label="Email" name="email">
-                  <Input placeholder="Search email" allowClear />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Form.Item label="Phone Number" name="phoneNumber">
-                  <Input placeholder="Search phone" allowClear />
-                </Form.Item>
-              </Col>
-
               {/* ── Dropdown selects ────────────────────────── */}
               <Col xs={24} sm={12} md={8} lg={6}>
                 <Form.Item label="Gender" name="gender">
@@ -97,8 +84,9 @@ export default function FilterPanel({ onApply, onReset }: Props) {
               </Col>
 
               <Col xs={24} sm={12} md={8} lg={6}>
-                <Form.Item label="Status" name="isActive">
+                <Form.Item label="Status" name="status">
                   <Select
+                    mode="multiple"
                     placeholder="Select status"
                     options={[...STATUS_OPTIONS]}
                     allowClear
@@ -134,16 +122,6 @@ export default function FilterPanel({ onApply, onReset }: Props) {
                     mode="multiple"
                     placeholder="Select country"
                     options={[...COUNTRY_OPTIONS]}
-                    allowClear
-                  />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Form.Item label="Created Within" name="createdAt">
-                  <Select
-                    placeholder="Select time range"
-                    options={[...CREATED_AT_OPTIONS]}
                     allowClear
                   />
                 </Form.Item>

@@ -4,7 +4,7 @@ import { Table } from "antd";
 import type { TablePaginationConfig } from "antd/es/table";
 
 import type { User, UserFilters } from "./types";
-import { fetchUsers } from "./api";
+import { fetchUserList, fetchUsersWithFilters } from "./api";
 import { userColumns } from "./columns";
 import FilterPanel from "./FilterPanel";
 
@@ -14,6 +14,7 @@ const DEFAULT_PAGE_SIZE = 10;
 export default function UsersTable() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<UserFilters>({});
 
@@ -24,7 +25,7 @@ export default function UsersTable() {
   const pagination: TablePaginationConfig = {
     current: pageNumber,
     pageSize: pageSize,
-    total: data.length,
+    total,
   };
 
   // Load data whenever pagination or filters change
@@ -37,8 +38,22 @@ export default function UsersTable() {
           pageSize: pageSize,
           total: 0,
         };
-        const response = await fetchUsers(paginationConfig, filters);
-        setData(response);
+
+        // Check if any filters are active
+        const hasActiveFilters = Object.values(filters).some((value) => {
+          if (Array.isArray(value)) return value.length > 0;
+          return typeof value === "string" && value.trim().length > 0;
+        });
+
+        let response;
+        if (hasActiveFilters) {
+          response = await fetchUsersWithFilters(filters, paginationConfig);
+        } else {
+          response = await fetchUserList(paginationConfig);
+        }
+
+        setData(response.data);
+        setTotal(response.total);
       } catch (err) {
         console.error("Failed to load users:", err);
       } finally {

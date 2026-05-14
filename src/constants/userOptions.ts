@@ -5,8 +5,8 @@ export const GENDER_OPTIONS = [
 ] as const;
 
 export const STATUS_OPTIONS = [
-  { label: "Active",   value: "true"  },
-  { label: "Inactive", value: "false" },
+  { label: "Active",   value: "Active"   },
+  { label: "Inactive", value: "Inactive" },
 ] as const;
 
 export const DEPARTMENT_OPTIONS = [
